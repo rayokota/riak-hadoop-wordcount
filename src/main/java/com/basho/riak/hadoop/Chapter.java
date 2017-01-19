@@ -17,19 +17,19 @@ import org.codehaus.jackson.annotate.JsonCreator;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonProperty;
 
-import com.basho.riak.client.convert.RiakIndex;
-
 /**
  * Value type for the Huck Finn word count
  * 
  * @author russell
  */
 @JsonIgnoreProperties(ignoreUnknown = true) public class Chapter {
-    @RiakIndex(name="author")
-    private final String author;
-    private final String book;
-    private final String chapter;
-    private final String text;
+    private String author;
+    private String book;
+    private String chapter;
+    private String text;
+
+    public Chapter() {
+    }
 
     @JsonCreator public Chapter(@JsonProperty("author") String author, @JsonProperty("book") String book,
             @JsonProperty("chapter") String chapter, @JsonProperty("text") String text) {

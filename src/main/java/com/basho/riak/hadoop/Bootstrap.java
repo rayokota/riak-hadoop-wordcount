@@ -25,16 +25,14 @@ import java.nio.charset.CharsetDecoder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.basho.riak.client.IRiakClient;
-import com.basho.riak.client.RiakException;
-import com.basho.riak.client.RiakFactory;
-import com.basho.riak.client.bucket.Bucket;
-import com.basho.riak.client.cap.UnresolvedConflictException;
-import com.basho.riak.client.convert.ConversionException;
-import com.basho.riak.client.raw.Transport;
-import com.basho.riak.client.raw.config.Configuration;
-import com.basho.riak.client.raw.http.HTTPClientConfig;
-import com.basho.riak.client.raw.pbc.PBClientConfig;
+import com.basho.riak.client.api.RiakClient;
+import com.basho.riak.client.api.RiakException;
+import com.basho.riak.client.api.commands.kv.StoreValue;
+import com.basho.riak.client.api.cap.UnresolvedConflictException;
+import com.basho.riak.client.api.convert.ConversionException;
+import com.basho.riak.client.core.query.Location;
+import com.basho.riak.client.core.query.Namespace;
+import com.basho.riak.hadoop.config.RiakLocation;
 
 /**
  * This class loads the data Huck Finn novel into your Riak cluster, a key/value
@@ -80,40 +78,29 @@ public class Bootstrap {
     private static final Pattern CHAPTER_PATTERN = Pattern.compile("CHAPTER\\s+([IVXLCDMTHEAST\\p{Blank}]+)[\\.|\r|\n]");
     private static final Pattern END_PATTERN = Pattern.compile("\\*\\*\\* END");
 
-    private final Bucket bucket;
+    private final RiakClient client;
 
     /**
-     * @param conf
+     * @param location
      * @throws RiakException
      */
-    private Bootstrap(Configuration conf) throws IOException, RiakException {
-        IRiakClient client = RiakFactory.newClient(conf);
-        bucket = client.fetchBucket(BUCKET).execute();
+    private Bootstrap(RiakLocation location) throws IOException, RiakException {
+        client = RiakClient.newClient(location.getPort(), location.getHost());
     }
 
     public static final void main(String[] args) {
-        Configuration conf = null;
+        RiakLocation conf = null;
         if (args.length == 0) {
-            conf = new PBClientConfig.Builder().withPort(PORT).build();
-        } else if (args.length != 2) {
+            conf = new RiakLocation("localhost", PORT);
+        } else if (args.length != 1) {
             printUsage();
+            System.exit(1);
         } else {
             try {
-                Transport t = Transport.valueOf(args[0].toUpperCase());
-                switch (t) {
-                case PB:
-                    String[] hp = args[1].split(":");
-                    conf = new PBClientConfig.Builder().withHost(hp[0]).withPort(Integer.parseInt(hp[1])).build();
-                    break;
-                case HTTP:
-                    conf = new HTTPClientConfig.Builder().withUrl(args[1]).build();
-                    break;
-                default:
-                    throw new IllegalArgumentException(t.toString());
-                }
-
+                String[] hp = args[0].split(":");
+                conf = new RiakLocation(hp[0], Integer.parseInt(hp[1]));
             } catch (IllegalArgumentException e) {
-                System.err.println("Unknown transport option '" + args[0] + "'");
+                System.err.println("Could not parse option '" + args[0] + "'");
                 printUsage();
                 System.exit(1);
             }
@@ -169,11 +156,19 @@ public class Bootstrap {
      * @throws IOException
      * @throws ConversionException
      * @throws UnresolvedConflictException
-     * @throws KRiakRetryFailedException
      */
     private void store(String key, String value) throws IOException, RiakException {
-        Chapter c = new Chapter(AUTHOR, BOOK, key, value);
-        bucket.store(key, c).execute();
+        try {
+            Chapter c = new Chapter(AUTHOR, BOOK, key, value);
+            Namespace ns = new Namespace(BUCKET);
+            Location location = new Location(ns, key.toString());
+
+            // Store object with default options
+            StoreValue sv = new StoreValue.Builder(c).withLocation(location).build();
+            StoreValue.Response svResponse = client.execute(sv);
+        } catch (Exception e) {
+            throw new RiakException(e);
+        }
     }
 
     /**
@@ -181,7 +176,7 @@ public class Bootstrap {
      */
     private static void printUsage() {
         StringBuilder b = new StringBuilder("Usage: ");
-        b.append("mvn exec:java -Dexec.mainClass=\"com.basho.riak.hadoop.Bootstrap\" -Dexec.classpathScope=runtime -Dexec.args=\"[pb|http pb_host:port|riak_url]\"");
+        b.append("mvn exec:java -Dexec.mainClass=\"com.basho.riak.hadoop.Bootstrap\" -Dexec.classpathScope=runtime -Dexec.args=\"host:port]\"");
         out.println(b);
     }
 }

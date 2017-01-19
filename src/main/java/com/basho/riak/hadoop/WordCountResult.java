@@ -21,16 +21,14 @@ import org.apache.hadoop.io.Writable;
 import org.codehaus.jackson.annotate.JsonCreator;
 import org.codehaus.jackson.annotate.JsonProperty;
 
-import com.basho.riak.client.convert.RiakIndex;
-
 /**
  * @author russell
  * 
  */
 public class WordCountResult implements Writable {
 
-    @RiakIndex(name = "word") private String word;
-    @RiakIndex(name = "count") private int count;
+    private String word;
+    private int count;
 
     /**
      * @param word

@@ -15,6 +15,8 @@ package com.basho.riak.hadoop;
 
 import java.io.IOException;
 
+import com.basho.riak.hadoop.config.RiakLocation;
+import com.basho.riak.hadoop.keylisters.BucketKeyLister;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.io.IntWritable;
@@ -24,13 +26,9 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
-import com.basho.riak.client.cap.DefaultResolver;
-import com.basho.riak.client.convert.JSONConverter;
-import com.basho.riak.client.query.indexes.BinIndex;
-import com.basho.riak.client.raw.query.indexes.BinValueQuery;
+import com.basho.riak.client.api.cap.DefaultResolver;
+import com.basho.riak.client.api.convert.JSONConverter;
 import com.basho.riak.hadoop.config.RiakConfig;
-import com.basho.riak.hadoop.config.RiakPBLocation;
-import com.basho.riak.hadoop.keylisters.SecondaryIndexesKeyLister;
 
 public class RiakWordCount extends Configured implements Tool {
 
@@ -44,7 +42,7 @@ public class RiakWordCount extends Configured implements Tool {
 
         public TokenCounterMapper() {
             // set up with Converter/Resolver instances
-            super(new JSONConverter<Chapter>(Chapter.class, ""), new DefaultResolver<Chapter>());
+            super(Chapter.class, new JSONConverter<Chapter>(Chapter.class), new DefaultResolver<Chapter>());
         }
 
         public void map(BucketKey key, Chapter value, Context context) throws IOException, InterruptedException {
@@ -101,13 +99,12 @@ public class RiakWordCount extends Configured implements Tool {
             keys[i] = String.valueOf(i + 1000);
         }
         Configuration conf = getConf();
-        conf = RiakConfig.setKeyLister(conf,
-                                       new SecondaryIndexesKeyLister(new BinValueQuery(BinIndex.named("author"),
-                                                                                       "wordcount", "Mark Twain")));
-        conf = RiakConfig.addLocation(conf, new RiakPBLocation("127.0.0.1", 8081));
-        conf = RiakConfig.addLocation(conf, new RiakPBLocation("127.0.0.1", 8082));
-        conf = RiakConfig.addLocation(conf, new RiakPBLocation("127.0.0.1", 8083));
-        conf = RiakConfig.addLocation(conf, new RiakPBLocation("127.0.0.1", 8084));
+        conf = RiakConfig.setKeyLister(conf, new BucketKeyLister("wordcount"));
+        conf = RiakConfig.addLocation(conf, new RiakLocation("127.0.0.1", 11087));
+        conf = RiakConfig.addLocation(conf, new RiakLocation("127.0.0.1", 12087));
+        conf = RiakConfig.addLocation(conf, new RiakLocation("127.0.0.1", 13087));
+        conf = RiakConfig.addLocation(conf, new RiakLocation("127.0.0.1", 14087));
+        conf = RiakConfig.addLocation(conf, new RiakLocation("127.0.0.1", 15087));
         conf = RiakConfig.setOutputBucket(conf, "wordcount_out");
         conf = RiakConfig.setHadoopClusterSize(conf, 4);
 

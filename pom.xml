@@ -18,13 +18,17 @@
 		<dependency>
 			<groupId>com.basho.riak.hadoop</groupId>
 			<artifactId>riak-hadoop</artifactId>
-			<version>0.2</version>
+			<version>0.2-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
-			<artifactId>hadoop-core</artifactId>
-			<version>0.20.203.0</version>
-			<scope>provided</scope>
+			<artifactId>hadoop-common</artifactId>
+			<version>2.5.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-mapreduce-client-core</artifactId>
+			<version>2.5.0</version>
 		</dependency>
 		<!-- TEST -->
 		<dependency>
@@ -40,8 +44,8 @@
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
-					<source>1.5</source>
-					<target>1.5</target>
+					<source>1.8</source>
+					<target>1.8</target>
 				</configuration>
 			</plugin>
 			<plugin>
